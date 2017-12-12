@@ -18,6 +18,7 @@ const RtmClient = require('@slack/client').RtmClient; // Saves Slack SDK functio
 const CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS; // 
 const RTM_EVENTS = require('@slack/client').RTM_EVENTS;
 let rtm = null;
+let nlp = null;
 
 function handleOnAuthenticated(rtmStartData) {
     console.log(`Logged in as ${rtmStartData.self.name} of team ${rtmStartData.team.name}, but not yet connected to a channel`); // Will pass in name of bot and name of team
@@ -26,10 +27,25 @@ function handleOnAuthenticated(rtmStartData) {
 
 // Function that sents a message to the bot
 function handleOnMessage(message) {
-    console.log(message);
+    
+    nlp.ask(message.text, (err, res) => {
+        if(err) {
+            console.log(err);
+            return;
+        }
 
-    rtm.sendMessage('this is a test message', message.channel, function() {
-        // Optional callback function that executed once a message has been sent
+        if(!res.intent) {
+            return rtm.sendMessage("Sorry, I don't know what you are talking about.", message.channel);
+        } else if(res.intent[0].value == 'time' && res.location) {
+            return rtm.sendMessage(`I don't yet know the time in ${res.location[0].value}`, message.channel);
+        } else {
+            console.log(res);
+            return rtm.sendMessage("Sorry, I don't know what you are talking about.", message.channel);
+        }
+
+        rtm.sendMessage('Sorry I did not understand', message.channel, function() {
+            // Optional callback function that executed once a message has been sent
+        });
     });
 }
 
@@ -37,8 +53,9 @@ function addAuthenticatedHandler(rtm, handler) {
     rtm.on(CLIENT_EVENTS.RTM.AUTHENTICAED, handler);
 }
 
-module.exports.init = function slackClient(token, logLevel) {
+module.exports.init = function slackClient(token, logLevel, nlpClient) {
     rtm = new RtmClient(token, {logLevel: logLevel}); // Instantiate new instance of RtmClient with the token provided
+    nlp = nlpClient;
     addAuthenticatedHandler(rtm, handleOnAuthenticated);
     rtm.on(RTM_EVENTS.MESSAGE, handleOnMessage);
     return rtm;
