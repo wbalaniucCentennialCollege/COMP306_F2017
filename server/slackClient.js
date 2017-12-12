@@ -15,10 +15,22 @@
 'use strict';
 
 const RtmClient = require('@slack/client').RtmClient; // Saves Slack SDK functions to variable called RtmClient
-const CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS;
+const CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS; // 
+const RTM_EVENTS = require('@slack/client').RTM_EVENTS;
+let rtm = null;
 
 function handleOnAuthenticated(rtmStartData) {
     console.log(`Logged in as ${rtmStartData.self.name} of team ${rtmStartData.team.name}, but not yet connected to a channel`); // Will pass in name of bot and name of team
+}
+
+
+// Function that sents a message to the bot
+function handleOnMessage(message) {
+    console.log(message);
+
+    rtm.sendMessage('this is a test message', message.channel, function() {
+        // Optional callback function that executed once a message has been sent
+    });
 }
 
 function addAuthenticatedHandler(rtm, handler) {
@@ -26,8 +38,9 @@ function addAuthenticatedHandler(rtm, handler) {
 }
 
 module.exports.init = function slackClient(token, logLevel) {
-    const rtm = new RtmClient(token, {logLevel: logLevel}); // Instantiate new instance of RtmClient with the token provided
+    rtm = new RtmClient(token, {logLevel: logLevel}); // Instantiate new instance of RtmClient with the token provided
     addAuthenticatedHandler(rtm, handleOnAuthenticated);
+    rtm.on(RTM_EVENTS.MESSAGE, handleOnMessage);
     return rtm;
 }
 
