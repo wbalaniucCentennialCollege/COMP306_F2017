@@ -12,7 +12,7 @@ const slackLogLevel = 'debug';
 const rtm = slackClient.init(slackToken, slackLogLevel);
 rtm.start();
 
-server.listen(3000);
+slackClient.addAuthenticatedHandler(rtm, () => server.listen(3000));
 
 // Test server now.
 // In terminal type: "node bin/run.js"
