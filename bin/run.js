@@ -5,10 +5,10 @@ const service = require("../server/service"); // Ties into service.js (just crea
 const http = require('http'); // Provides an HTTP object from core NODE.JS.
 const server = http.createServer(service); // Creates a server object that uses express through the service variable
 
-const witToken = '';
+const witToken = 'EPZ24X5YGYFYL63XJRHGK4EESM3IXPYP';
 const witClient = require('../server/witClient')(witToken);
 
-const slackToken = ''; // INSERT TOKEN HERE
+const slackToken = 'xoxb-285839840913-CFQ5u1autLJUZeGoTgAz86Wd'; // INSERT TOKEN HERE
 const slackLogLevel = 'verbose';
 
 const rtm = slackClient.init(slackToken, slackLogLevel, witClient);

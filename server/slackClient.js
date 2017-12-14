@@ -27,26 +27,55 @@ function handleOnAuthenticated(rtmStartData) {
 
 // Function that sents a message to the bot
 function handleOnMessage(message) {
-    
-    nlp.ask(message.text, (err, res) => {
-        if(err) {
-            console.log(err);
-            return;
-        }
 
-        if(!res.intent) {
-            return rtm.sendMessage("Sorry, I don't know what you are talking about.", message.channel);
-        } else if(res.intent[0].value == 'time' && res.location) {
-            return rtm.sendMessage(`I don't yet know the time in ${res.location[0].value}`, message.channel);
-        } else {
-            console.log(res);
-            return rtm.sendMessage("Sorry, I don't know what you are talking about.", message.channel);
-        }
+    // We do not need to run "ask" for EVERY message.
+    if (message.text.toLowerCase().includes('iris')) {
+        nlp.ask(message.text, (err, res) => {
+            if (err) {
+                console.log(err);
+                return;
+            }
 
-        rtm.sendMessage('Sorry I did not understand', message.channel, function() {
-            // Optional callback function that executed once a message has been sent
+            try {
+                console.log(res.intent);
+
+                if(!res.intent || !res.intent[0] || !res.intent[0].value) {
+                    throw new Error("Could not extract intent")
+                }
+
+                const intent = require('../intents/' + res.intent[0].value + 'Intent');
+
+                intent.process(res, function(error, response) {
+                    if(error) {
+                        console.log(error.message)
+                        return;
+                    }
+
+                    return rtm.sendMessage(response, message.channel);
+                });
+            } catch (err) {
+                console.log(err);
+                console.log(res);
+                rtm.sendMessage("Sorry, I don't know what you are talking about", message.channel);
+            }
+
+            /*
+            if (!res.intent) {
+                return rtm.sendMessage("Sorry, I don't know what you are talking about.", message.channel);
+            } else if (res.intent[0].value == 'time' && res.location) {
+                return rtm.sendMessage(`I don't yet know the time in ${res.location[0].value}`, message.channel);
+            } else {
+                console.log(res);
+                return rtm.sendMessage("Sorry, I don't know what you are talking about.", message.channel);
+            }
+
+            rtm.sendMessage('Sorry I did not understand', message.channel, function () {
+                // Optional callback function that executed once a message has been sent
+            });
+            */
         });
-    });
+    }
+
 }
 
 function addAuthenticatedHandler(rtm, handler) {
@@ -54,7 +83,7 @@ function addAuthenticatedHandler(rtm, handler) {
 }
 
 module.exports.init = function slackClient(token, logLevel, nlpClient) {
-    rtm = new RtmClient(token, {logLevel: logLevel}); // Instantiate new instance of RtmClient with the token provided
+    rtm = new RtmClient(token, { logLevel: logLevel }); // Instantiate new instance of RtmClient with the token provided
     nlp = nlpClient;
     addAuthenticatedHandler(rtm, handleOnAuthenticated);
     rtm.on(RTM_EVENTS.MESSAGE, handleOnMessage);
